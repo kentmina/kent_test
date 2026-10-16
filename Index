@@ -35,7 +35,7 @@
 
   <script>
     // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
-    const APPS_SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyvZgEuyRjRc8B_1_7iIAbZ2voDl_H2RYNLZAX7fKv-GWRPEf4FBFkfwTPDkcjpLFlm/exec";
 
     const html5QrCode = new Html5Qrcode("reader");
 
