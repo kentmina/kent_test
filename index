@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live Camera QR Scanner</title>
+  <!-- Include html5-qrcode library -->
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f9;
+    }
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      color: #007bff;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Live QR Code Scanner</h2>
+  <div id="reader"></div>
+  <div id="result">Initializing camera...</div>
+
+  <script>
+    // PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE:
+    const APPS_SCRIPT_URL = "YOUR_WEB_APP_URL_HERE";
+
+    const html5QrCode = new Html5Qrcode("reader");
+
+    function onScanSuccess(decodedText, decodedResult) {
+      // Pause scanner temporarily
+      html5QrCode.stop().then(() => {
+        document.getElementById('result').innerText = "Logging: " + decodedText;
+
+        // Send data to Google Apps Script via POST
+        fetch(APPS_SCRIPT_URL, {
+          method: "POST",
+          headers: {
+            // text/plain prevents CORS preflight blocks with Google Apps Script
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({ qrData: decodedText })
+        })
+        .then(response => response.json())
+        .then(data => {
+          document.getElementById('result').innerText = "Logged successfully: " + decodedText;
+          setTimeout(startScanner, 2000); // Restart scanner after 2 seconds
+        })
+        .catch(error => {
+          console.error("Error logging:", error);
+          document.getElementById('result').innerText = "Error logging to sheet.";
+          setTimeout(startScanner, 2000);
+        });
+
+      }).catch(err => {
+        console.error("Failed to stop scanner", err);
+      });
+    }
+
+    function startScanner() {
+      document.getElementById('result').innerText = "Scanning for QR code...";
+      
+      Html5Qrcode.getCameras().then(devices => {
+        if (devices && devices.length) {
+          let cameraId = devices[0].id;
+          // Prefer back camera on mobile devices
+          for (let i = 0; i < devices.length; i++) {
+            if (devices[i].label.toLowerCase().includes('back') || devices[i].label.toLowerCase().includes('rear')) {
+              cameraId = devices[i].id;
+              break;
+            }
+          }
+
+          html5QrCode.start(
+            cameraId,
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess
+          ).catch(err => {
+            document.getElementById('result').innerText = "Camera start failed. Check permissions.";
+            console.error(err);
+          });
+        } else {
+          document.getElementById('result').innerText = "No cameras found.";
+        }
+      }).catch(err => {
+        document.getElementById('result').innerText = "Camera permission denied or unavailable.";
+        console.error(err);
+      });
+    }
+
+    // Start scanner on page load
+    startScanner();
+  </script>
+
+</body>
+</html>
